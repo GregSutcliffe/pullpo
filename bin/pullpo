@@ -21,6 +21,8 @@
 #     Santiago Dueñas <sduenas@bitergia.com>
 #
 
+import datetime
+
 from argparse import ArgumentParser
 
 from pullpo.backends import BackendError
@@ -52,6 +54,16 @@ def main():
         backend = GitHubBackend(args.gh_user, args.gh_password,
                                 args.gh_token, session,
                                 enterprise_url=args.gh_url)
+	if args.rate_limit:
+	    print('Remaining rate limit requests: ' + str(backend.gh.rate_limit()['rate']['remaining']))
+	    print('Rate limit requests reset at:  ' + str(datetime.datetime.fromtimestamp(backend.gh.rate_limit()['rate']['reset'])))
+            sys.exit(0)
+
+
+        if args.rate_limit:
+            print('Remaining rate limit requests: ' + str(backend.gh.rate_limit()['rate']['remaining']))
+            print('Rate limit requests reset at:  ' + str(datetime.datetime.fromtimestamp(backend.gh.rate_limit()['rate']['reset']+3600)))
+            sys.exit(0)
 
         for repo in backend.fetch(args.owner, args.repository, since, newest):
             store(db, session, repo)
@@ -108,6 +120,10 @@ def parse_args():
     group.add_argument('--gh-newest-first', dest='gh_newest_first',
                        action='store_true',
                        help='Retrieve newest issues first',
+                       default=False)
+    group.add_argument('--rate-limit', dest='rate_limit',
+                       action='store_true',
+                       help='Display rate limit info for the GitHub login',
                        default=False)
 
     # Positional arguments
